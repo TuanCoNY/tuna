@@ -1,87 +1,76 @@
 const User = require("../models/UserModel")
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcryptjs");
 const { genneralAccessToken, genneralRefreshToken } = require("./JwtService")
 
 const createUser = (newUser) => {
     return new Promise(async (resolve, reject) => {
-        const { name, email, password, confirmPassword, phone } = newUser
+        const { name, email, password, phone } = newUser;
 
         try {
-            const checkUser = await User.findOne({
-                email: email
-            })
-            if (checkUser !== null) {
-                resolve({
+            const checkUser = await User.findOne({ email: email });
+            if (checkUser) {
+                reject({
                     status: 'ERR',
-                    message: 'The email is already'
-                })
+                    message: 'Email already exists.'
+                });
             }
 
-            const hash = bcrypt.hashSync(password, 10)
-            const createdUser = await User.create({
-                name,
-                email,
-                password: hash,
-                phone
-            })
-            if (createdUser) {
-                resolve({
-                    status: 'OK',
-                    message: 'success',
-                    data: createdUser
-                })
-            }
+            const hash = await bcrypt.hash(password, 10); // Sử dụng bất đồng bộ
+            const createdUser = await User.create({ name, email, password: hash, phone });
 
-
+            resolve({
+                status: 'OK',
+                message: 'User created successfully',
+                data: createdUser
+            });
         } catch (e) {
-            reject(e)
+            reject({
+                status: 'ERR',
+                message: e.message || 'Something went wrong.'
+            });
         }
-    })
-}
+    });
+};
 
 const loginUser = (userLogin) => {
     return new Promise(async (resolve, reject) => {
-        const { email, password } = userLogin
+        const { email, password } = userLogin;
 
         try {
-            const checkUser = await User.findOne({
-                email: email
-            })
-            if (checkUser === null) {
-                resolve({
+            const checkUser = await User.findOne({ email });
+            if (!checkUser) {
+                reject({
                     status: 'ERR',
-                    message: 'The user is not defined'
-                })
+                    message: 'User not found.'
+                });
             }
-            const comparePassword = bcrypt.compareSync(password, checkUser.password)
+
+            const comparePassword = await bcrypt.compare(password, checkUser.password); // Bất đồng bộ
 
             if (!comparePassword) {
-                resolve({
+                reject({
                     status: 'ERR',
-                    message: 'The password or user incorrect'
-                })
+                    message: 'Incorrect password.'
+                });
             }
-            const access_token = await genneralAccessToken({
-                id: checkUser.id,
-                isAdmin: checkUser.isAdmin
-            })
 
-            const refresh_token = await genneralRefreshToken({
-                id: checkUser.id,
-                isAdmin: checkUser.isAdmin
-            })
+            const access_token = await genneralAccessToken({ id: checkUser.id, isAdmin: checkUser.isAdmin });
+            const refresh_token = await genneralRefreshToken({ id: checkUser.id, isAdmin: checkUser.isAdmin });
+
             resolve({
                 status: 'OK',
-                message: 'Success',
+                message: 'Login successful',
                 access_token,
-                refresh_token,
-
-            })
+                refresh_token
+            });
         } catch (e) {
-            reject(e)
+            reject({
+                status: 'ERR',
+                message: e.message || 'Something went wrong.'
+            });
         }
-    })
-}
+    });
+};
 
 const updateUser = (id, data) => {
     return new Promise(async (resolve, reject) => {
