@@ -10,22 +10,22 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 3001
 app.use(cors())
-app.use(bodyParser({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb' }));
-app.use(bodyParser.json())
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
-routes(app);
 
 
 routes(app);
 mongoose.connect(`${process.env.MONGO_DB}`)
     .then(() => {
-        //console.log('connect Db succses!')
+        console.log('Connected to MongoDB successfully!');
     })
     .catch((err) => {
-        //console.log(err)
-    })
+        console.error('Failed to connect to MongoDB:', err.message);
+    });
+
+// Start the server
 app.listen(port, () => {
-    // console.log('server is running in port', + port)
-})
+    console.log(`Server is running on port ${port}`);
+});
