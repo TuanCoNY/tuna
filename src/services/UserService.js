@@ -11,7 +11,8 @@ const createUser = (newUser) => {
             if (checkUser) {
                 reject({
                     status: 'ERR',
-                    message: 'Email already exists.'
+                    message: 'Email already exists.',
+                    existingUserName: checkUser.name,
                 });
             }
 
@@ -175,6 +176,29 @@ const getDetailsUser = (id) => {
         }
     })
 }
+const resetPasswordService = async (email, newPassword) => {
+    try {
+        // Kiểm tra xem email có tồn tại không
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error('Email không tồn tại trong hệ thống');
+        }
+
+        // Hash mật khẩu mới trước khi lưu
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+
+        // Cập nhật mật khẩu mới vào cơ sở dữ liệu
+        await user.save();
+
+        return {
+            status: 'OK',
+            message: 'Mật khẩu đã được cập nhật thành công'
+        };
+    } catch (err) {
+        throw new Error(err.message || 'Có lỗi xảy ra khi cập nhật mật khẩu');
+    }
+};
 
 
 module.exports = {
@@ -184,6 +208,7 @@ module.exports = {
     deleteUser,
     getAllUser,
     getDetailsUser,
-    deleteManyUser
+    deleteManyUser,
+    resetPasswordService,
 
 }

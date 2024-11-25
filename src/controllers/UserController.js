@@ -187,7 +187,30 @@ const logoutUser = async (req, res) => {
         })
     }
 }
+const resetPasswordController = async (req, res) => {
+    try {
+        const { email, newPassword } = req.body;
 
+        // Kiểm tra các điều kiện nhập liệu
+        if (!email || !newPassword) {
+            return res.status(400).json({
+                status: 'ERR',
+                message: 'Cần cung cấp email và mật khẩu mới'
+            });
+        }
+
+        // Gọi service để thực hiện logic quên mật khẩu
+        const response = await UserService.resetPasswordService(email, newPassword);
+
+        // Trả về phản hồi nếu thành công
+        return res.status(200).json(response);
+    } catch (err) {
+        return res.status(500).json({
+            status: 'ERR',
+            message: err.message || 'Có lỗi xảy ra trong quá trình xử lý'
+        });
+    }
+};
 module.exports = {
     createUser,
     loginUser,
@@ -197,6 +220,7 @@ module.exports = {
     getDetailsUser,
     refreshToken,
     logoutUser,
-    deleteMany
+    deleteMany,
+    resetPasswordController,
 
 }
