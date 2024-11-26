@@ -1,6 +1,16 @@
 const User = require("../models/UserModel")
 const bcrypt = require("bcryptjs");
 const { genneralAccessToken, genneralRefreshToken } = require("./JwtService")
+// 
+// services/UserService.js
+const { getVerificationCodeForEmail } = require('./verificationService'); // Import hàm từ verificationService
+const VerificationCode = require('../models/VerificationCode');  // Import model
+
+
+
+
+// Mail 
+const nodemailer = require('nodemailer');
 
 const createUser = (newUser) => {
     return new Promise(async (resolve, reject) => {
@@ -180,9 +190,9 @@ const resetPasswordService = async (email, newPassword) => {
     try {
         // Kiểm tra xem email có tồn tại không
         const user = await User.findOne({ email });
-        if (!user) {
-            throw new Error('Email không tồn tại trong hệ thống');
-        }
+        // if (!user) {
+        //     throw new Error('Email không tồn tại trong hệ thống');
+        // }
 
         // Hash mật khẩu mới trước khi lưu
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -201,6 +211,91 @@ const resetPasswordService = async (email, newPassword) => {
 };
 
 
+// 
+const sendVerificationCode = async (email) => {
+    try {
+        // Kiểm tra xem email có tồn tại không
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error('Email không tồn tại trong hệ thống');
+        }
+
+        // Tạo mã xác thực ngẫu nhiên
+        const verificationCode = Math.floor(100000 + Math.random() * 900000);
+
+        // Cấu hình transporter để gửi email
+        const transporter = nodemailer.createTransport({
+            service: "gmail", // Hoặc SMTP khác
+            auth: {
+                user: "anhtuanhyehye2002@gmail.com", // Thay bằng email của bạn
+                pass: "nmhurvnqyqetocsk", // Thay bằng App Password
+            },
+        });
+
+        // Cấu hình nội dung email
+        const mailOptions = {
+            from: "your-email@gmail.com",
+            to: email,
+            subject: "Your Verification Code",
+            text: `Your verification code is: ${verificationCode}`,
+        };
+
+        // Gửi email
+        await transporter.sendMail(mailOptions);
+
+        // Lưu mã xác thực vào bảng VerificationCode trong cơ sở dữ liệu
+        const existingCode = await VerificationCode.findOne({ email });
+        if (existingCode) {
+            // Nếu mã xác thực đã tồn tại cho email, cập nhật mã xác thực mới
+            existingCode.code = verificationCode;
+            existingCode.createdAt = Date.now();  // Cập nhật thời gian tạo lại
+            await existingCode.save();
+        } else {
+            // Nếu chưa có mã xác thực cho email, tạo mới bản ghi
+            const newVerificationCode = new VerificationCode({
+                email,
+                code: verificationCode,
+            });
+            await newVerificationCode.save();
+        }
+
+        // 
+        return {
+            status: 'OK',
+            message: 'Mã xác thực đã được gửi thành công',
+        };
+    } catch (err) {
+        throw new Error(err.message || 'Có lỗi xảy ra khi gửi mã xác thực');
+    }
+};
+
+// 
+const verifyCode = async (email, code) => {
+    console.log('email (100)', email, code)
+    // Logic để kiểm tra mã xác thực
+    // Giả sử bạn có một cơ sở dữ liệu để kiểm tra mã xác thực
+    const savedCode = await getVerificationCodeForEmail(email);  // Giả sử bạn có hàm này để lấy mã đã lưu trữ trong DB
+    if (savedCode === code) {
+        return { status: 'OK', message: 'Mã xác thực chính xác' };
+    } else {
+        throw new Error('(200)Mã xác thực không đúng');
+    }
+};
+
+// const redisClient = require('./redisClient');
+const saveCodeForEmail = (email, code) => {
+    const expiresIn = 600; // Mã xác thực hết hạn sau 10 phút (600 giây)
+
+    // Lưu mã vào Redis với khóa là email
+    redisClient.setex(email, expiresIn, code, (err, response) => {
+        if (err) {
+            console.error('Error saving verification code to Redis:', err);
+        } else {
+            console.log(`Verification code for ${email} saved in Redis with expiration time of ${expiresIn} seconds.`);
+        }
+    });
+};
+
 module.exports = {
     createUser,
     loginUser,
@@ -210,5 +305,10 @@ module.exports = {
     getDetailsUser,
     deleteManyUser,
     resetPasswordService,
+    //
+    sendVerificationCode, // Thêm hàm vào export
+    verifyCode,
+    saveCodeForEmail,
+
 
 }

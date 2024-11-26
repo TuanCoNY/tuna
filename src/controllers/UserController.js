@@ -189,15 +189,15 @@ const logoutUser = async (req, res) => {
 }
 const resetPasswordController = async (req, res) => {
     try {
-        const { email, newPassword } = req.body;
+        const { email, newPassword } = req.body.email;
 
         // Kiểm tra các điều kiện nhập liệu
-        if (!email || !newPassword) {
-            return res.status(400).json({
-                status: 'ERR',
-                message: 'Cần cung cấp email và mật khẩu mới'
-            });
-        }
+        // if (!email || !newPassword) {
+        //     return res.status(400).json({
+        //         status: 'ERR',
+        //         message: 'Cần cung cấp email và mật khẩu mới'
+        //     });
+        // }
 
         // Gọi service để thực hiện logic quên mật khẩu
         const response = await UserService.resetPasswordService(email, newPassword);
@@ -211,6 +211,75 @@ const resetPasswordController = async (req, res) => {
         });
     }
 };
+
+//
+const { sendVerificationCode } = require('../services/UserService'); // Import service
+// services/UserService.js
+const { getVerificationCodeForEmail } = require('../services/verificationService'); // Import hàm từ verificationService
+
+//
+const sendCodeController = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({
+            status: 'ERR',
+            message: 'Email không được để trống',
+        });
+    }
+
+    try {
+        const result = await sendVerificationCode(email);
+        return res.status(200).json(result);
+    } catch (err) {
+        return res.status(500).json({
+            status: '(500) ERR',
+            message: err.message || 'Đã xảy ra lỗi',
+        });
+    }
+};
+
+//
+const verifyCodeController = async (req, res) => {
+    const { email, code } = req.body.email; // Truy cập đúng vào trường 'email' và 'code' trong req.body
+
+    console.log('req', req.body.email); // Để kiểm tra cấu trúc của req.body
+    console.log('email:', email, 'code:', code); // Để kiểm tra giá trị email và code
+
+    if (!email || !code) {
+        return res.status(400).json({
+            status: 'ERR',
+            message: 'Email và mã xác thực không được để trống',
+        });
+    }
+
+    try {
+        //
+        console.log("Mã xác thực và email đã được lấy", email);
+        // Lấy mã xác thực đã lưu trong Redis cho email
+        const savedCode = await getVerificationCodeForEmail(email);
+
+        // So sánh mã người dùng nhập với mã đã lưu trong Redis
+        if (savedCode === code) {
+            return res.status(200).json({
+                status: 'OK',
+                message: 'Mã xác thực chính xác',
+            });
+        } else {
+            return res.status(400).json({
+                status: 'ERR',
+                message: 'Mã xác thực không đúng',
+            });
+        }
+    } catch (err) {
+        return res.status(400).json({
+            status: 'ERR',
+            message: err.message || 'Mã xác thực không hợp lệ hoặc đã hết hạn',
+        });
+    }
+};
+
+
 module.exports = {
     createUser,
     loginUser,
@@ -222,5 +291,8 @@ module.exports = {
     logoutUser,
     deleteMany,
     resetPasswordController,
+    //
+    sendCodeController,
+    verifyCodeController,
 
 }
