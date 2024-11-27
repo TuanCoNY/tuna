@@ -116,10 +116,11 @@ const deleteUser = (id) => {
             const checkUser = await User.findOne({
                 _id: id
             })
+            console.log('checkUser', checkUser)
             if (checkUser === null) {
                 resolve({
                     status: 'OK',
-                    message: 'The user is not defined'
+                    message: 'The (4)user is not defined'
                 })
             }
             await User.findByIdAndDelete(id)

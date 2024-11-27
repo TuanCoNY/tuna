@@ -20,7 +20,8 @@ router.post('/forgot-password', userController.resetPasswordController);
 // POST /api/auth/send-code
 router.post('/send-code', userController.sendCodeController);
 router.post('/verify-code', userController.verifyCodeController);
-
+//
+router.put('/update-role/:id', authMiddleware, userController.updateUserRole);
 
 //
 module.exports = router

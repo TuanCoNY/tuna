@@ -84,7 +84,7 @@ const getVerificationCodeForEmail = async (email) => {
         if (Date.now() > expirationTime) {
             throw new Error('Mã xác thực đã hết hạn');
         }
-
+        
         return verificationRecord.code;  // Trả về mã xác thực
     } catch (err) {
         throw new Error('Lỗi khi lấy mã xác thực từ cơ sở dữ liệu');

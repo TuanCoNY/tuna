@@ -107,6 +107,41 @@ const deleteUser = async (req, res) => {
         })
     }
 }
+// const deleteUser = async (req, res) => {
+//     try {
+//         const userId = req.params.id;
+//         console.log(userId)
+
+//         // Kiểm tra xem userId có tồn tại không
+//         if (!userId) {
+//             return res.status(200).json({
+//                 status: 'ERR',
+//                 message: '(1)The userId is required'
+//             });
+//         }
+
+//         // Tìm người dùng trong cơ sở dữ liệu
+//         const userToDelete = await User.findById(userId);
+
+//         // Kiểm tra nếu người dùng là admin
+//         if (userToDelete?.isAdmin) {
+//             return res.status(400).json({
+//                 status: 'ERR',
+//                 message: '(2)Không thể xóa tài khoản admin'
+//             });
+//         }
+
+//         // Thực hiện xóa người dùng
+//         const response = await UserService.deleteUser(userId);
+
+//         return res.status(200).json(response);
+//     } catch (e) {
+//         return res.status(404).json({
+//             message: e.message || '(3)Có lỗi xảy ra'
+//             return
+//         });
+//     }
+// };
 
 const deleteMany = async (req, res) => {
     try {
@@ -278,6 +313,31 @@ const verifyCodeController = async (req, res) => {
         });
     }
 };
+//
+const updateUserRole = async (req, res) => {
+    const { id } = req.params; // Lấy user ID từ URL
+    const { role } = req.body; // Vai trò mới được gửi từ frontend (admin hoặc user)
+
+    try {
+        const user = await User.findById(id); // Tìm user theo ID
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Kiểm tra role hợp lệ
+        if (role !== 'admin' && role !== 'user') {
+            return res.status(400).json({ message: "Invalid role value" });
+        }
+
+        // Cập nhật role
+        user.role = role;
+        await user.save();
+
+        res.status(200).json({ message: "User role updated successfully", user });
+    } catch (error) {
+        res.status(500).json({ message: "Error updating user role", error });
+    }
+};
 
 
 module.exports = {
@@ -294,5 +354,7 @@ module.exports = {
     //
     sendCodeController,
     verifyCodeController,
+    //
+    updateUserRole,
 
 }
