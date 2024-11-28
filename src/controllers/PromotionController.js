@@ -3,12 +3,11 @@ const PromotionService = require('../services/PromotionService');
 // Tạo chương trình khuyến mại mới
 const createPromotion = async (req, res) => {
     try {
-        const promotionData = req.body;
-        const newPromotion = await PromotionService.createPromotion(promotionData);
+        const promotion = await PromotionService.createPromotion(req.body);
         return res.status(201).json({
             status: 'OK',
             message: 'Promotion created successfully',
-            data: newPromotion
+            data: promotion
         });
     } catch (error) {
         return res.status(400).json({
@@ -38,9 +37,9 @@ const getAllPromotions = async (req, res) => {
 // Cập nhật chương trình khuyến mại
 const updatePromotion = async (req, res) => {
     try {
-        const promotionId = req.params.id;
-        const promotionData = req.body;
-        const updatedPromotion = await PromotionService.updatePromotion(promotionId, promotionData);
+        const { id } = req.params; // Lấy `id` từ route params
+        console.log('id', id)
+        const updatedPromotion = await PromotionService.updatePromotion(id, req.body); // Truyền dữ liệu từ `req.body`
         return res.status(200).json({
             status: 'OK',
             message: 'Promotion updated successfully',
@@ -57,11 +56,12 @@ const updatePromotion = async (req, res) => {
 // Xóa chương trình khuyến mại
 const deletePromotion = async (req, res) => {
     try {
-        const promotionId = req.params.id;
-        await PromotionService.deletePromotion(promotionId);
+        const { id } = req.params; // Lấy `id` từ route params
+        const deletedPromotion = await PromotionService.deletePromotion(id);
         return res.status(200).json({
             status: 'OK',
-            message: 'Promotion deleted successfully'
+            message: 'Promotion deleted successfully',
+            data: deletedPromotion
         });
     } catch (error) {
         return res.status(400).json({
