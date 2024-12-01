@@ -80,6 +80,40 @@ const cancelOrderDetails = async (req, res) => {
         })
     }
 }
+// const cancelOrderDetails = async (req, res) => {
+//     try {
+//         const orderId = req.params.id;
+//         const { orderItems } = req.body; // Lấy orderItems từ request body
+//         console.log(orderId)
+
+//         if (!orderId) {
+//             return res.status(400).json({
+//                 status: 'ERR',
+//                 message: 'orderId là bắt buộc',
+//             });
+//         }
+
+//         // Kiểm tra orderItems có phải là mảng không
+//         if (!Array.isArray(orderItems)) {
+//             return res.status(400).json({
+//                 status: 'ERR',
+//                 message: 'orderItems phải là mảng',
+//             });
+//         }
+
+//         const response = await OrderService.cancelOrderDetails(orderId, orderItems);
+
+//         return res.status(200).json(response);
+//     } catch (e) {
+//         return res.status(500).json({
+//             status: 'ERR',
+//             message: 'Đã có lỗi xảy ra khi hủy đơn hàng',
+//             error: e.message || e,
+//         });
+//     }
+// };
+
+
 
 const getAllOrder = async (req, res) => {
     try {
@@ -91,6 +125,75 @@ const getAllOrder = async (req, res) => {
         })
     }
 }
+const updateOrderStatus = async (req, res) => {
+    try {
+        const { id } = req.params; // Lấy `orderId` từ URL
+        const { status } = req.body; // Lấy `status` từ body request
+
+        // Kiểm tra trạng thái hợp lệ
+        const validStatuses = ['Đã giao', 'Xác nhận hủy', 'Hủy đơn', 'Đang xử lý'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                status: 'ERR',
+                message: 'Invalid status value',
+            });
+        }
+
+        // Gọi service để cập nhật trạng thái đơn hàng
+        const result = await OrderService.updateOrderStatus(id, status);
+
+        // Trả về kết quả từ service
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({
+            status: 'ERR',
+            message: error.message,
+        });
+    }
+};
+//
+const deleteManyOrders = async (req, res) => {
+    try {
+        const { orderIds } = req.body; // Lấy danh sách ID từ request body
+        console.log('orderIds', orderIds)
+        if (!orderIds || !Array.isArray(orderIds)) {
+            return res.status(400).json({
+                status: 'ERR',
+                message: 'orderIds phải là một mảng.',
+            });
+        }
+
+        const response = await OrderService.deleteManyOrders(orderIds);
+        return res.status(200).json(response);
+    } catch (e) {
+        return res.status(500).json({
+            status: 'ERR',
+            message: 'Đã xảy ra lỗi khi xóa đơn hàng.',
+            error: e.message,
+        });
+    }
+};
+const markOrderAsReceived = async (req, res) => {
+    try {
+        const { orderId } = req.params; // Lấy orderId từ tham số URL
+
+        if (!orderId) {
+            return res.status(400).json({
+                status: 'ERR',
+                message: 'Order ID is required'
+            });
+        }
+
+        // Gọi service để cập nhật trạng thái đơn hàng
+        const response = await OrderService.markOrderAsReceived(orderId);
+
+        return res.status(200).json(response);
+    } catch (e) {
+        return res.status(500).json({
+            message: e.message || e,
+        });
+    }
+};
 
 
 
@@ -100,5 +203,7 @@ module.exports = {
     getDetailsOrder,
     cancelOrderDetails,
     getAllOrder,
-
+    updateOrderStatus,
+    deleteManyOrders,
+    markOrderAsReceived,
 }

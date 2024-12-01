@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
+
   orderItems: [
     {
       name: { type: String, required: true },
@@ -31,7 +32,13 @@ const orderSchema = new mongoose.Schema({
   paidAt: { type: Date },
   isDelivered: { type: Boolean, default: false },
   deliveredAt: { type: Date },
+  status: {
+    type: String,
+    enum: ['Đã giao', 'Chờ xác nhận hủy', 'Hủy đơn', 'Đang xử lý'],
+    default: 'Đang xử lý', // Trạng thái mặc định
+  },
 },
+
   {
     timestamps: true,
   }
